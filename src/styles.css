@@ -832,6 +832,20 @@ body {
 }
 
 .wallet-status-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 255, 255, 0.1);
+  border: 1px solid #00ffff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px; /* Add this to ensure consistent width */
+}
+
+.connect-wallet-button {
+  width: 100%;
   background: linear-gradient(45deg, #00ffff, #0070f3);
   color: white;
   border: none;
@@ -840,6 +854,20 @@ body {
   cursor: pointer;
   font-weight: bold;
   transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-size: 0.9em;
+  letter-spacing: 1px;
+}
+
+.connect-wallet-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+  background: linear-gradient(45deg, #0070f3, #00ffff);
+}
+
+.connect-wallet-button:disabled {
+  opacity: 0.7;
+  cursor: wait;
 }
 
 .profile-dropdown {
@@ -1039,6 +1067,7 @@ body {
   height: 60px;
   resize: none;
   min-height: unset;
+  padding: 8px 12px;
 }
 
 .profile-editor .form-group input {
@@ -2271,10 +2300,11 @@ body {
 }
 
 .connect-wallet-button {
+  width: 100%;
   background: linear-gradient(45deg, #00ffff, #0070f3);
   color: white;
   border: none;
-  padding: 12px 24px;
+  padding: 8px 16px;
   border-radius: 20px;
   cursor: pointer;
   font-weight: bold;
@@ -2282,10 +2312,9 @@ body {
   text-transform: uppercase;
   font-size: 0.9em;
   letter-spacing: 1px;
-  min-width: 180px;
 }
 
-.connect-wallet-button:hover {
+.connect-wallet-button:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
   background: linear-gradient(45deg, #0070f3, #00ffff);
@@ -2294,8 +2323,6 @@ body {
 .connect-wallet-button:disabled {
   opacity: 0.7;
   cursor: wait;
-  transform: none;
-  box-shadow: none;
 }
 
 .wallet-status-button {
@@ -2308,11 +2335,33 @@ body {
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
+  min-width: 120px; /* Add this to ensure consistent width */
 }
 
-.wallet-status-button:hover {
-  background: rgba(0, 255, 255, 0.15);
+.connect-wallet-button {
+  width: 100%;
+  background: linear-gradient(45deg, #00ffff, #0070f3);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-size: 0.9em;
+  letter-spacing: 1px;
+}
+
+.connect-wallet-button:hover:not(:disabled) {
   transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+  background: linear-gradient(45deg, #0070f3, #00ffff);
+}
+
+.connect-wallet-button:disabled {
+  opacity: 0.7;
+  cursor: wait;
 }
 
 .wallet-info {
@@ -2805,4 +2854,38 @@ body {
   .spinning-token {
     font-size: 0.7em;
   }
+}
+
+.connect-wallet-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.connect-wallet-button {
+  background: linear-gradient(45deg, #00ffff, #0070f3);
+  color: white;
+  border: none;
+  padding: 16px 32px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1.2em;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  min-width: 250px;
+}
+
+.connect-wallet-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+  background: linear-gradient(45deg, #0070f3, #00ffff);
+}
+
+.connect-wallet-button:disabled {
+  opacity: 0.7;
+  cursor: wait;
 }
