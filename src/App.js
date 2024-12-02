@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { Client } from 'xrpl';
 import WebApp from '@twa-dev/sdk';
 import { XummPkce } from 'xumm-oauth2-pkce';
+import Transport from "@ledgerhq/hw-transport-webusb";
+import Xrp from "@ledgerhq/hw-app-xrp";
 
 // Add this utility function at the top of the file
 const formatTimeAgo = (timestamp) => {
@@ -33,6 +35,37 @@ const showNotification = (message) => {
     // You could also use a custom alert or notification system here
     alert(message);
   }
+};
+
+// Add this function at the top of the file with other utility functions
+const generateDefaultAvatar = (username = '') => {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  canvas.width = 200;
+  canvas.height = 200;
+
+  // Create gradient background
+  const gradient = context.createLinearGradient(0, 0, 200, 200);
+  gradient.addColorStop(0, '#00ffff');
+  gradient.addColorStop(1, '#0070f3');
+  
+  // Fill background
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 200, 200);
+
+  // Add initials or default icon
+  context.fillStyle = 'white';
+  context.font = 'bold 80px Righteous';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  
+  const initials = username
+    ? username.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : '';
+  
+  context.fillText(initials, 100, 100);
+
+  return canvas.toDataURL('image/png');
 };
 
 // New components
@@ -106,6 +139,18 @@ const TokenCreator = ({ onClose, wallet, client, onSubmit }) => {
   const [showSocialLinks, setShowSocialLinks] = useState(false);
   const [showTokenDetails, setShowTokenDetails] = useState(true);
   const [showTokenomics, setShowTokenomics] = useState(false);
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onClose]);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -172,7 +217,7 @@ const TokenCreator = ({ onClose, wallet, client, onSubmit }) => {
 
   return (
     <div className="token-creator-overlay">
-      <div className="token-creator">
+      <div className="token-creator" ref={modalRef}>
         <h2>Create New Token</h2>
         <form onSubmit={handleSubmit}>
           <div className="token-details-section">
@@ -214,7 +259,7 @@ const TokenCreator = ({ onClose, wallet, client, onSubmit }) => {
 
                 <div className="form-group">
                   <label>
-                    Description (max 100 characters)
+                    Description
                     <span className={`required-dot ${formData.description ? 'filled' : ''}`}>*</span>
                   </label>
                   <textarea
@@ -225,7 +270,7 @@ const TokenCreator = ({ onClose, wallet, client, onSubmit }) => {
                       }
                     }}
                     maxLength={100}
-                    rows={3}
+                    rows={2}
                     className="fixed-textarea"
                     required
                   />
@@ -428,58 +473,96 @@ const TokenList = ({ tokens, sortBy, onSortChange }) => {
   );
 };
 
-const ProfileDropdown = ({ wallet, onDisconnect, onEditProfile, onViewProfile }) => {
+const ProfileDropdown = ({ 
+  wallet, 
+  onDisconnect, 
+  onEditProfile, 
+  onViewProfile,
+  onCreateToken 
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showActions, setShowActions] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+        setShowActions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const truncateAddress = (address) => {
     if (!address) return '';
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  const handleConnect = () => {
-    if (window.connectWallet) {
-      window.connectWallet();
+  const handleConnect = async () => {
+    if (!window.connectWallet) return;
+    setIsConnecting(true);
+    try {
+      await window.connectWallet();
+    } catch (error) {
+      console.error('Connection failed:', error);
     }
+    setIsConnecting(false);
   };
 
+  // When no wallet is connected
   if (!wallet) {
     return (
       <div className="profile-container">
-        <button 
-          className="wallet-status-button"
-          onClick={handleConnect}
-        >
-          Connect Wallet
-        </button>
+        <div className="connect-buttons">
+          <button 
+            className="connect-wallet-button"
+            onClick={handleConnect}
+            disabled={isConnecting}
+          >
+            {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+          </button>
+        </div>
       </div>
     );
   }
 
+  // When wallet is connected
   return (
-    <div className="profile-container">
-      <div className="wallet-connected" onClick={() => setIsOpen(!isOpen)}>
-        <img 
-          src={wallet.profileImage || 'default-profile.png'} 
-          alt="Profile" 
-          className="mini-profile-image"
-        />
-        <span className="balance-text">{wallet.balance || '0'} XRP</span>
+    <div className="profile-container" ref={dropdownRef}>
+      <div className="connected-buttons">
+        <button 
+          className="wallet-status-button"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <img 
+            src={wallet.profileImage || generateDefaultAvatar(wallet.username)} 
+            alt="Profile" 
+            className="mini-profile-image"
+          />
+          <span className="wallet-info">
+            <span className="username">{wallet.username || 'Anonymous'}</span>
+            <span className="balance">{wallet.balance || '0'} XRP</span>
+          </span>
+        </button>
       </div>
 
       {isOpen && (
         <div className="profile-dropdown">
           <div className="profile-info">
             <img 
-              src={wallet.profileImage || 'default-profile.png'} 
+              src={wallet.profileImage || generateDefaultAvatar(wallet.username)} 
               alt="Profile" 
               className="profile-image"
             />
             <h3>{wallet.username || 'Anonymous'}</h3>
+            <p className="profile-bio">{wallet.bio || 'No bio yet'}</p>
             <p className="wallet-address" title={wallet.account}>
               {truncateAddress(wallet.account)}
             </p>
-            <p className="profile-bio">{wallet.bio || 'No bio yet'}</p>
             <p className="wallet-balance">Balance: {wallet.balance || '0'} XRP</p>
           </div>
 
@@ -514,7 +597,7 @@ const ProfileEditor = ({ wallet, onSave, onClose, onViewProfile }) => {
   const [formData, setFormData] = useState({
     username: wallet.username || '',
     bio: wallet.bio || '',
-    profileImage: wallet.profileImage || null
+    profileImage: wallet.profileImage || generateDefaultAvatar(wallet.username)
   });
 
   // Create a hidden file input ref
@@ -559,6 +642,11 @@ const ProfileEditor = ({ wallet, onSave, onClose, onViewProfile }) => {
     }
   };
 
+  const handleGenerateAvatar = () => {
+    const newAvatar = generateDefaultAvatar(formData.username);
+    setFormData(prev => ({ ...prev, profileImage: newAvatar }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);
@@ -571,30 +659,28 @@ const ProfileEditor = ({ wallet, onSave, onClose, onViewProfile }) => {
         <form onSubmit={handleSubmit}>
           <div className="profile-image-container">
             <img 
-              src={formData.profileImage || 'default-profile.png'} 
+              src={formData.profileImage || generateDefaultAvatar()} 
               alt="Profile Preview" 
               className="profile-preview"
             />
-            <button 
-              type="button"
-              className="camera-button"
-              onClick={() => fileInputRef.current.click()}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 3H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                />
-                <path d="M12 17C14.2091 17 16 15.2091 16 13C16 10.7909 14.2091 9 12 9C9.79086 9 8 10.7909 8 13C8 15.2091 9.79086 17 12 17Z" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
+            <div className="image-buttons">
+              <button 
+                type="button"
+                className="camera-button"
+                onClick={() => fileInputRef.current.click()}
+                title="Upload Image"
+              >
+                📷
+              </button>
+              <button
+                type="button"
+                className="generate-button"
+                onClick={handleGenerateAvatar}
+                title="Generate Avatar"
+              >
+                🎲
+              </button>
+            </div>
             <input
               ref={fileInputRef}
               type="file"
@@ -622,12 +708,21 @@ const ProfileEditor = ({ wallet, onSave, onClose, onViewProfile }) => {
             <label>Bio</label>
             <textarea
               value={formData.bio}
-              onChange={e => setFormData(prev => ({ 
-                ...prev, 
-                bio: e.target.value 
-              }))}
-              maxLength={160}
+              onChange={e => {
+                if (e.target.value.length <= 100) {
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    bio: e.target.value 
+                  }));
+                }
+              }}
+              maxLength={100}
+              rows={2}
+              placeholder="Tell us about yourself..."
             />
+            <div className="character-count">
+              {formData.bio.length}/100
+            </div>
           </div>
 
           <div className="button-group">
@@ -667,7 +762,7 @@ const ProfileView = ({ wallet, onEditProfile, onClose }) => {
         <div className="profile-view-content">
           <div className="profile-view-info">
             <img 
-              src={wallet.profileImage || 'default-profile.png'} 
+              src={wallet.profileImage || generateDefaultAvatar(wallet.username)} 
               alt="Profile" 
               className="profile-view-image"
             />
@@ -713,7 +808,7 @@ const ProfileView = ({ wallet, onEditProfile, onClose }) => {
                 {activeTab === 'held' ? (
                   wallet.tokensHeld?.map((token, index) => (
                     <div key={index} className="token-mini-card">
-                      <img src={token.image || 'default-token.png'} alt={token.name} />
+                      <img src={token.image || generateDefaultAvatar(token.creatorName)} alt={token.creatorName} />
                       <div className="token-info">
                         <h4>{token.name}</h4>
                         <p>Balance: {token.balance}</p>
@@ -723,7 +818,7 @@ const ProfileView = ({ wallet, onEditProfile, onClose }) => {
                 ) : (
                   wallet.tokensCreated?.map((token, index) => (
                     <div key={index} className="token-mini-card">
-                      <img src={token.image || 'default-token.png'} alt={token.name} />
+                      <img src={token.image || generateDefaultAvatar(token.creatorName)} alt={token.creatorName} />
                       <div className="token-info">
                         <h4>{token.name}</h4>
                         <p>Created: {formatTimeAgo(token.createdAt)}</p>
@@ -744,6 +839,18 @@ const ProfileView = ({ wallet, onEditProfile, onClose }) => {
 const TokenCreationConfirm = ({ tokenData, onConfirm, onCancel }) => {
   const [xrpAmount, setXrpAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        onCancel();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onCancel]);
 
   const handleConfirm = async () => {
     if (!xrpAmount || parseFloat(xrpAmount) <= 0) {
@@ -779,7 +886,7 @@ const TokenCreationConfirm = ({ tokenData, onConfirm, onCancel }) => {
 
   return (
     <div className="token-confirm-overlay">
-      <div className="token-confirm-modal">
+      <div className="token-confirm-modal" ref={modalRef}>
         <h3>Create Token</h3>
         <div className="token-summary">
           <p><strong>Name:</strong> {tokenData.name}</p>
@@ -829,6 +936,23 @@ const TokenCreationConfirm = ({ tokenData, onConfirm, onCancel }) => {
           </button>
         </div>
       </div>
+    </div>
+  );
+};
+
+const WalletConnectOptions = ({ onConnect }) => {
+  return (
+    <div className="wallet-options">
+      <button 
+        className="wallet-option-button ledger"
+        onClick={() => onConnect('ledger')}
+      >
+        <img 
+          src="https://cryptologos.cc/logos/ledger-ledger-logo.png" 
+          alt="Ledger" 
+        />
+        <span>Connect Ledger</span>
+      </button>
     </div>
   );
 };
@@ -958,27 +1082,51 @@ const App = () => {
     fetchTokens();
   }, []);
 
-  const connectWallet = async () => {
+  const connectWallet = async (type = 'ledger') => {
     try {
-      if (!xumm) return;
-      const auth = await xumm.authorize();
-      
-      // Get account info including balance
-      const accountInfo = await client.request({
-        command: 'account_info',
-        account: auth.account
-      });
-      
-      const balance = accountInfo.result.account_data.Balance;
-      const xrpBalance = (parseInt(balance) / 1000000).toFixed(2); // Convert drops to XRP
+      if (type === 'ledger') {
+        try {
+          // Request permission to access USB device
+          const transport = await Transport.create();
+          const xrp = new Xrp(transport);
 
-      setWallet({
-        ...auth,
-        username: userProfile.username,
-        bio: userProfile.bio,
-        profileImage: userProfile.profileImage,
-        balance: xrpBalance
-      });
+          // Get public key and first address
+          const { address, publicKey } = await xrp.getAddress("44'/144'/0'/0/0");
+
+          // Get account info including balance
+          const accountInfo = await client.request({
+            command: 'account_info',
+            account: address
+          });
+          
+          const balance = accountInfo.result.account_data.Balance;
+          const xrpBalance = (parseInt(balance) / 1000000).toFixed(2);
+
+          setWallet({
+            account: address,
+            publicKey: publicKey,
+            username: userProfile.username,
+            bio: userProfile.bio,
+            profileImage: userProfile.profileImage,
+            balance: xrpBalance,
+            type: 'ledger'
+          });
+
+          showNotification("Ledger connected successfully!");
+          return;
+        } catch (error) {
+          console.error('Ledger connection failed:', error);
+          if (error.message.includes('Unable to claim interface')) {
+            showNotification("Please ensure your Ledger is connected and unlocked");
+          } else if (error.message.includes('WebUSB')) {
+            showNotification("WebUSB not supported. Please use Chrome or Edge browser");
+          } else {
+            showNotification("Failed to connect Ledger. Please try again.");
+          }
+          return;
+        }
+      }
+      // ... rest of the existing wallet connection logic
     } catch (error) {
       console.error('Failed to connect wallet:', error);
       showNotification("Failed to connect wallet. Please try again.");
@@ -1152,6 +1300,7 @@ const App = () => {
         onDisconnect={handleDisconnect}
         onEditProfile={() => setShowProfileEditor(true)}
         onViewProfile={() => setShowProfileView(true)}
+        onCreateToken={() => setShowTokenCreator(true)}
       />
       
       <div className="header-section">

@@ -756,15 +756,15 @@ body {
 
 .profile-dropdown {
   position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 10px;
-  background: rgba(255, 255, 255, 0.05);
+  top: 60px;
+  right: 20px;
+  background: var(--bg-color);
   border: 2px solid #00ffff;
   border-radius: 12px;
   padding: 20px;
-  width: 300px;
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+  min-width: 300px;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+  z-index: 1000;
 }
 
 .profile-dropdown::before {
@@ -799,9 +799,14 @@ body {
 }
 
 .profile-bio {
-  font-size: 14px;
-  opacity: 0.8;
-  margin: 10px 0;
+  margin: 8px 0;
+  font-size: 0.9em;
+  color: var(--text-color);
+  opacity: 0.9;
+  text-align: center;
+  line-height: 1.4;
+  max-width: 100%;
+  word-wrap: break-word;
 }
 
 .profile-actions {
@@ -841,19 +846,18 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000;
+  z-index: 1100;
 }
 
 .profile-editor {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-color);
   border: 2px solid #00ffff;
   border-radius: 12px;
-  padding: 20px;
+  padding: 24px;
   width: 90%;
-  max-width: 400px;
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+  max-width: 500px;
   position: relative;
-  overflow: hidden;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
 }
 
 .profile-editor::before {
@@ -865,56 +869,125 @@ body {
   bottom: 0;
   background: linear-gradient(135deg, rgba(0, 255, 255, 0.1) 0%, transparent 100%);
   pointer-events: none;
+  border-radius: 12px;
 }
 
 .profile-editor h2 {
+  margin: 0 0 20px;
   font-family: 'Righteous', cursive;
-  font-size: 24px;
   background: linear-gradient(45deg, #00ffff, #0070f3);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  margin-bottom: 20px;
   text-align: center;
 }
 
+.profile-image-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 20px;
+}
+
 .profile-preview {
-  width: 100px;
-  height: 100px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
-  margin: 10px auto;
-  border: 2px solid #00ffff;
+  border: 3px solid #00ffff;
   object-fit: cover;
+  background: rgba(0, 255, 255, 0.05);
+}
+
+.camera-button {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #00ffff, #0070f3);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.camera-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+}
+
+.profile-editor .form-group {
+  margin-bottom: 20px;
+  background: rgba(0, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+.profile-editor .form-group label {
   display: block;
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: var(--text-color);
 }
 
 .profile-editor .form-group input,
 .profile-editor .form-group textarea {
-  background: rgba(0, 255, 255, 0.05);
+  width: 100%;
+  padding: 8px 12px;
   border: 1px solid #00ffff;
+  border-radius: 8px;
+  background: rgba(0, 255, 255, 0.05);
   color: var(--text-color);
+  font-size: 14px;
   transition: all 0.3s ease;
+  height: 36px;
+}
+
+.profile-editor .form-group textarea {
+  height: 60px;
+  resize: none;
+  min-height: unset;
+}
+
+.profile-editor .form-group input {
+  height: 36px;
+}
+
+.profile-editor .form-group {
+  margin-bottom: 15px;
+  background: rgba(0, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
 }
 
 .profile-editor .form-group input:focus,
 .profile-editor .form-group textarea:focus {
-  background: rgba(0, 255, 255, 0.1);
-  box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
   outline: none;
+  background: rgba(0, 255, 255, 0.1);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+}
+
+.profile-editor .character-count {
+  text-align: right;
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 4px;
 }
 
 .profile-editor .button-group {
   display: flex;
-  gap: 10px;
-  justify-content: space-between;
-  margin-top: 20px;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 25px;
 }
 
-.profile-editor .view-profile-button {
-  background: linear-gradient(45deg, #00ffff, #0070f3);
-  color: white;
-  border: none;
-  padding: 8px 16px;
+.profile-editor .button-group button {
+  padding: 8px 24px;
   border-radius: 20px;
   cursor: pointer;
   font-weight: bold;
@@ -922,50 +995,19 @@ body {
   text-transform: uppercase;
   font-size: 0.9em;
   letter-spacing: 1px;
-}
-
-.profile-editor .view-profile-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
-  background: linear-gradient(45deg, #0070f3, #00ffff);
+  min-width: 120px;
 }
 
 .profile-editor .save-button {
   background: linear-gradient(45deg, #00ffff, #0070f3);
   color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  font-size: 0.9em;
-  letter-spacing: 1px;
 }
 
 .profile-editor .save-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
   background: linear-gradient(45deg, #0070f3, #00ffff);
-}
-
-.profile-editor .cancel-button {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-color);
-  border: 1px solid #00ffff;
-  padding: 8px 16px;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  font-size: 0.9em;
-  letter-spacing: 1px;
-}
-
-.profile-editor .cancel-button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
 }
 
 .wallet-connected {
@@ -1476,11 +1518,14 @@ body {
   text-transform: uppercase;
   font-size: 0.9em;
   letter-spacing: 1px;
+  font-weight: bold;
+  min-width: 120px;
 }
 
 .token-creator .cancel-button:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.2);
 }
 
 /* Update dark/light mode variables */
@@ -2035,4 +2080,438 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.wallet-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.wallet-option-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid #00ffff;
+  background: rgba(0, 255, 255, 0.05);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.wallet-option-button:hover {
+  background: rgba(0, 255, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.2);
+}
+
+.wallet-option-button img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.wallet-option-button.ledger {
+  background: linear-gradient(45deg, #142533, #1B1B1B);
+  border: 1px solid #00ffff;
+  padding: 16px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.wallet-option-button.ledger::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, rgba(0, 255, 255, 0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.wallet-option-button.ledger:hover::before {
+  opacity: 1;
+}
+
+.wallet-option-button.ledger img {
+  width: 28px;
+  height: 28px;
+  filter: brightness(0) invert(1);
+  transition: transform 0.3s ease;
+}
+
+.wallet-option-button.ledger:hover img {
+  transform: scale(1.1);
+}
+
+.wallet-option-button.ledger span {
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  font-size: 1.1em;
+}
+
+/* Add loading state */
+.wallet-option-button.ledger.loading {
+  cursor: wait;
+  opacity: 0.8;
+}
+
+.wallet-option-button.ledger.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  border: 2px solid #00ffff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: translateY(-50%) rotate(360deg); }
+}
+
+.connect-wallet-button {
+  background: linear-gradient(45deg, #00ffff, #0070f3);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-size: 0.9em;
+  letter-spacing: 1px;
+  min-width: 180px;
+}
+
+.connect-wallet-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+  background: linear-gradient(45deg, #0070f3, #00ffff);
+}
+
+.connect-wallet-button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+  transform: none;
+  box-shadow: none;
+}
+
+.wallet-status-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 255, 255, 0.1);
+  border: 1px solid #00ffff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.wallet-status-button:hover {
+  background: rgba(0, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.wallet-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.wallet-info .username {
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+.wallet-info .balance {
+  font-size: 0.8em;
+  opacity: 0.8;
+}
+
+.mini-profile-image {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #00ffff;
+  object-fit: cover;
+}
+
+.connect-buttons,
+.connected-buttons {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.profile-container {
+  position: fixed;
+  top: 20px;
+  right: 80px;
+  z-index: 1000;
+}
+
+.create-token-button {
+  background: linear-gradient(45deg, #00ffff, #0070f3);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-size: 0.9em;
+  letter-spacing: 1px;
+  min-width: 180px;
+  margin: 0;
+}
+
+.create-token-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+  background: linear-gradient(45deg, #0070f3, #00ffff);
+}
+
+.profile-editor .view-profile-button {
+  background: linear-gradient(45deg, #00ffff, #0070f3);
+  color: white;
+  border: none;
+  padding: 8px 24px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-size: 0.9em;
+  letter-spacing: 1px;
+  min-width: 120px;
+}
+
+.profile-editor .view-profile-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+  background: linear-gradient(45deg, #0070f3, #00ffff);
+}
+
+.profile-editor .cancel-button {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-color);
+  border: 1px solid #00ffff;
+  padding: 8px 24px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-size: 0.9em;
+  letter-spacing: 1px;
+  font-weight: bold;
+  min-width: 120px;
+}
+
+.profile-editor .cancel-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.2);
+}
+
+.profile-editor .form-group input {
+  height: unset;
+  padding: 8px 12px;
+}
+
+.profile-editor .form-group textarea {
+  height: 60px;
+  resize: none;
+  min-height: unset;
+  padding: 8px 12px;
+}
+
+.token-creator .form-group textarea {
+  height: 60px;
+  resize: none;
+  min-height: unset;
+  padding: 8px 12px;
+}
+
+.image-buttons {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  display: flex;
+  gap: 8px;
+}
+
+.camera-button,
+.generate-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #00ffff, #0070f3);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 18px;
+}
+
+.camera-button:hover,
+.generate-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+}
+
+.profile-preview {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 3px solid #00ffff;
+  object-fit: cover;
+  background: rgba(0, 255, 255, 0.05);
+}
+
+/* Mobile-first responsive styles */
+@media screen and (max-width: 768px) {
+  .profile-container {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+  }
+
+  .profile-dropdown {
+    position: fixed;
+    top: 70px;
+    right: 10px;
+    left: 10px;
+    width: auto;
+    max-width: none;
+  }
+
+  .wallet-status-button {
+    padding: 6px 12px;
+  }
+
+  .wallet-info .username {
+    font-size: 0.8em;
+  }
+
+  .wallet-info .balance {
+    font-size: 0.7em;
+  }
+
+  .mini-profile-image {
+    width: 28px;
+    height: 28px;
+  }
+
+  .profile-actions-fields {
+    padding: 10px;
+  }
+
+  .profile-actions-fields button {
+    padding: 6px 12px;
+    font-size: 0.8em;
+  }
+
+  /* Token list mobile view */
+  .tokens-grid {
+    grid-template-columns: 1fr;
+    padding: 10px;
+  }
+
+  .token-card {
+    margin-bottom: 15px;
+  }
+
+  /* Profile editor/viewer mobile view */
+  .profile-editor,
+  .profile-view {
+    width: 95%;
+    padding: 15px;
+    margin: 10px;
+  }
+
+  .profile-image-container {
+    width: 100px;
+    height: 100px;
+  }
+
+  .button-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .button-group button {
+    width: 100%;
+  }
+
+  /* King of the Hill mobile view */
+  .king-card {
+    padding: 15px;
+  }
+
+  .king-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .king-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .king-title h3 {
+    font-size: 20px;
+  }
+}
+
+/* Tablet view */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  .tokens-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .profile-dropdown {
+    width: 280px;
+  }
+}
+
+/* Adjust theme toggle position for mobile */
+@media screen and (max-width: 480px) {
+  .theme-toggle {
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+}
+
+.wallet-address {
+  font-size: 0.8em;
+  opacity: 0.7;
+  margin: 4px 0;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.wallet-address:hover {
+  opacity: 1;
 }
