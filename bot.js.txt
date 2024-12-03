@@ -1,0 +1,69 @@
+const TelegramBot = require('node-telegram-bot-api');
+const { Client } = require('xrpl');
+const { XummPkce } = require('xumm-oauth2-pkce');
+require('dotenv').config();
+
+const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
+const xrplClient = new Client('wss://xrplcluster.com');
+
+// Connect to XRPL
+xrplClient.connect().then(() => {
+  console.log('Connected to XRPL');
+}).catch(console.error);
+
+// Command handlers
+bot.onText(/\/start/, async (msg) => {
+  const chatId = msg.chat.id;
+  const keyboard = {
+    inline_keyboard: [
+      [{
+        text: 'Connect Wallet',
+        web_app: { url: `${process.env.REACT_APP_WEBAPP_URL}/connect` }
+      }],
+      [{
+        text: 'Market Info',
+        callback_data: 'market_info'
+      }],
+      [{
+        text: 'Settings',
+        callback_data: 'settings'
+      }]
+    ]
+  };
+
+  bot.sendMessage(chatId, 
+    'Welcome to XRP Wallet Manager!\nManage your XRP wallet directly from Telegram.',
+    { parse_mode: 'Markdown', reply_markup: keyboard }
+  );
+});
+
+// Add error handling for each command
+bot.on('error', (error) => {
+  console.error('Bot error:', error);
+});
+
+// Add command logging
+bot.on('message', (msg) => {
+  console.log('Received message:', msg.text);
+});
+
+// Export functions for web app
+module.exports = {
+  updateUserWallet: async (userId, walletData) => {
+    try {
+      return true;
+    } catch (error) {
+      console.error('Wallet update error:', error);
+      return false;
+    }
+  },
+  
+  getUserWallet: async (userId) => {
+    try {
+      return null;
+    } catch (error) {
+      console.error('Wallet fetch error:', error);
+      return null;
+    }
+  }
+};

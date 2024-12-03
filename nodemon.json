@@ -1,0 +1,8 @@
+{
+  "watch": ["bot.js", "config/", "models/"],
+  "ext": "js,json",
+  "ignore": ["node_modules/", "build/"],
+  "env": {
+    "NODE_ENV": "development"
+  }
+} 

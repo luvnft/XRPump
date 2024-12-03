@@ -1,9 +1,7 @@
-import React, { useEffect, useState, useRef } from "react";
-import { Client } from 'xrpl';
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import WebApp from '@twa-dev/sdk';
-import { XummPkce } from 'xumm-oauth2-pkce';
-import Transport from "@ledgerhq/hw-transport-webusb";
-import Xrp from "@ledgerhq/hw-app-xrp";
+import WalletConnect from './pages/WalletConnect';
+import { HashRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 
 // Add this utility function at the top of the file
 const formatTimeAgo = (timestamp) => {
@@ -68,6 +66,23 @@ const generateDefaultAvatar = (username = '') => {
   return canvas.toDataURL('image/png');
 };
 
+// Add this with other utility functions at the top
+const truncateAddress = (address) => {
+  if (!address) return '';
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+};
+
+// Add this utility function at the top with other utility functions
+const copyToClipboard = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    showNotification("Address copied to clipboard!");
+  } catch (err) {
+    console.error('Failed to copy:', err);
+    showNotification("Failed to copy address");
+  }
+};
+
 // New components
 const KingOfTheHill = ({ token, onTrade }) => (
   <div className="king-of-hill">
@@ -111,7 +126,7 @@ const KingOfTheHill = ({ token, onTrade }) => (
   </div>
 );
 
-const TokenCreator = ({ onClose, wallet, client, onSubmit }) => {
+const TokenCreator = ({ onClose, wallet, onSubmit }) => {
   const [formData, setFormData] = useState({
     name: '',
     ticker: '',
@@ -497,26 +512,85 @@ const ProfileDropdown = ({
   onDisconnect, 
   onEditProfile, 
   onViewProfile,
-  onCreateToken,
+  navigate,
   connectWallet
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showActions, setShowActions] = useState(false);
   const dropdownRef = useRef(null);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+        setShowActions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleConnect = () => {
+    navigate('/connect');
+  };
+
+  // If no wallet is connected, just show connect button
+  if (!wallet) {
+    return (
+      <div className="profile-container">
+        <button 
+          className="wallet-status-button"
+          onClick={handleConnect}
+        >
+          <span className="wallet-info">
+            <span className="username">Connect Wallet</span>
+          </span>
+        </button>
+      </div>
+    );
+  }
+
+  // If wallet is connected, show full dropdown functionality
   return (
     <div className="profile-container" ref={dropdownRef}>
-      <button 
-        className="wallet-status-button"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <span className="wallet-info">
-          <span className="username">Settings</span>
-        </span>
-      </button>
+      <div className="connected-buttons">
+        <button 
+          className="wallet-status-button"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <img 
+            src={wallet.profileImage || generateDefaultAvatar(wallet.username)} 
+            alt="Profile" 
+            className="mini-profile-image"
+          />
+          <span className="wallet-info">
+            <span className="username">{wallet.username || 'Anonymous'}</span>
+            <span className="balance">{wallet.balance || '0'} XRP</span>
+          </span>
+        </button>
+      </div>
 
       {isOpen && (
         <div className="profile-dropdown">
+          <div className="profile-info">
+            <img 
+              src={wallet.profileImage || generateDefaultAvatar(wallet.username)} 
+              alt="Profile" 
+              className="profile-image"
+            />
+            <h3>{wallet.username || 'Anonymous'}</h3>
+            <p className="profile-bio">{wallet.bio || 'No bio yet'}</p>
+            <p 
+              className="wallet-address" 
+              title="Click to copy"
+              onClick={() => copyToClipboard(wallet.account)}
+            >
+              {truncateAddress(wallet.account)}
+            </p>
+            <p className="wallet-balance">Balance: {wallet.balance || '0'} XRP</p>
+          </div>
+
           <div className="profile-actions-section">
             <button 
               type="button" 
@@ -528,26 +602,18 @@ const ProfileDropdown = ({
             
             {showActions && (
               <div className="profile-actions-fields">
+                <button onClick={onViewProfile}>View Profile</button>
+                <button onClick={onEditProfile}>Edit Profile</button>
+                <button onClick={() => {
+                  onDisconnect();
+                  setIsOpen(false);
+                }}>Disconnect Wallet</button>
                 <button onClick={() => setIsOpen(false)}>Close</button>
               </div>
             )}
           </div>
         </div>
       )}
-    </div>
-  );
-};
-
-const ConnectWallet = ({ onConnect, isConnecting }) => {
-  return (
-    <div className="connect-wallet-container">
-      <button 
-        onClick={() => onConnect('ledger')}
-        disabled={isConnecting}
-        className="connect-wallet-button"
-      >
-        {isConnecting ? 'Connecting...' : 'Connect Ledger'}
-      </button>
     </div>
   );
 };
@@ -728,7 +794,11 @@ const ProfileView = ({ wallet, onEditProfile, onClose }) => {
             <div className="profile-info-text">
               <h3>{wallet.username || 'Anonymous'}</h3>
               <p className="profile-view-bio">{wallet.bio || 'No bio yet'}</p>
-              <p className="wallet-address" title={wallet.account}>
+              <p 
+                className="wallet-address" 
+                title="Click to copy"
+                onClick={() => copyToClipboard(wallet.account)}
+              >
                 {truncateAddress(wallet.account)}
               </p>
             </div>
@@ -899,8 +969,9 @@ const TokenCreationConfirm = ({ tokenData, onConfirm, onCancel }) => {
   );
 };
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 const App = () => {
-  const [client, setClient] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [showTokenCreator, setShowTokenCreator] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -914,188 +985,151 @@ const App = () => {
     profileImage: null
   });
   const [showProfileView, setShowProfileView] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
+  const [telegramId, setTelegramId] = useState(null);
 
-  // XRP burn address (BlackHole address)
-  const BURN_ADDRESS = "rrrrrrrrrrrrrrrrrrrrrhoLvTp";
+  // Use the useNavigate hook from react-router-dom
+  const navigate = useNavigate();
 
+  // Initialize tokens and king token
   useEffect(() => {
-    const initClient = async () => {
-      const xrplClient = new Client('wss://s.altnet.rippletest.net:51233');
-      await xrplClient.connect();
-      setClient(xrplClient);
-    };
+    // Simulate fetching tokens
+    const mockTokens = [
+      {
+        name: "XRPump Token",
+        ticker: "PUMP",
+        description: "The official XRPump token",
+        marketCap: 5000000,
+        price: 0.005,
+        priceChange: 15.23,
+        volume: 2500000,
+        createdAt: Date.now() - 86400000,
+        featured: true,
+        image: 'path/to/pump-logo.png'
+      },
+      // ... other tokens
+    ];
+    setTokens(mockTokens);
 
-    initClient();
-    WebApp.ready();
-    
-    // Update theme when Telegram theme changes
-    const handleThemeChange = () => {
-      setIsDarkMode(WebApp.colorScheme === 'dark');
-    };
-    
-    window.Telegram.WebApp.onEvent('themeChanged', handleThemeChange);
-    
-    return () => {
-      if (client) client.disconnect();
-      window.Telegram.WebApp.offEvent('themeChanged', handleThemeChange);
-    };
+    // Set King of the Hill token
+    setKingToken({
+      name: "XRPump Token",
+      ticker: "PUMP",
+      price: 0.005,
+      volume: 2500000,
+      marketCap: 5000000,
+      priceChange: 15.23,
+      image: 'path/to/pump-logo.png'
+    });
   }, []);
 
+  // Initialize Telegram ID
   useEffect(() => {
-    // Simulate fetching tokens - replace with actual API call
-    const fetchTokens = async () => {
-      // Example tokens with varied data
-      const mockTokens = [
-        {
-          name: "Sample Token",
-          ticker: "SMPL",
-          description: "A sample token for demonstration",
-          marketCap: 1000000,
-          price: 0.001,
-          priceChange: 5.23,
-          createdAt: Date.now() - 86400000,
-          featured: true
-        },
-        {
-          name: "High Volume Token",
-          ticker: "HVT",
-          description: "Token with highest trading volume",
-          marketCap: 2000000,
-          price: 0.002,
-          priceChange: -2.45,
-          createdAt: Date.now() - 172800000,
-          featured: true
-        },
-        {
-          name: "New Token",
-          ticker: "NEW",
-          description: "Recently created token",
-          marketCap: 500000,
-          price: 0.0005,
-          priceChange: 12.34,
-          createdAt: Date.now() - 3600000,
-          featured: false
-        },
-        {
-          name: "Small Cap Token",
-          ticker: "SCT",
-          description: "Token with lower market cap",
-          marketCap: 100000,
-          price: 0.0001,
-          priceChange: -8.67,
-          createdAt: Date.now() - 259200000,
-          featured: false
-        }
-      ];
-      setTokens(mockTokens);
-    };
-
-    fetchTokens();
+    if (window.Telegram.WebApp) {
+      const webApp = window.Telegram.WebApp;
+      const userId = webApp.initDataUnsafe?.user?.id;
+      if (userId) {
+        setTelegramId(userId);
+        console.log('Telegram ID set:', userId);
+      }
+    }
   }, []);
 
-  const connectWallet = async () => {
+  // Add test connection function inside App component
+  const testConnection = async () => {
     try {
-      setIsConnecting(true);
-      
-      // Use Telegram WebApp to get wallet info
-      if (!WebApp.initData) {
-        showNotification("Please open this app through Telegram");
+      if (!telegramId) {
+        showNotification("Please open app through Telegram bot");
         return;
       }
 
-      try {
-        // Get the user's wallet address from Telegram WebApp
-        const userWallet = await WebApp.MainButton.getData();
-        
-        if (!userWallet) {
-          showNotification("Please connect your wallet in Telegram first");
-          return;
-        }
+      const response = await fetch(`/api/test-connection/${telegramId}`);
+      const data = await response.json();
 
-        // Get account info
-        const accountInfo = await client.request({
-          command: 'account_info',
-          account: userWallet.address
-        });
-        
-        const balance = accountInfo.result.account_data.Balance;
-        const xrpBalance = (parseInt(balance) / 1000000).toFixed(2);
-
+      if (data.success) {
         setWallet({
-          account: userWallet.address,
-          publicKey: userWallet.publicKey,
-          username: userProfile.username,
-          bio: userProfile.bio,
-          profileImage: userProfile.profileImage,
-          balance: xrpBalance,
+          account: data.wallet.address,
+          balance: data.wallet.balance,
           type: 'telegram'
         });
-
-        showNotification("Wallet connected successfully!");
-      } catch (error) {
-        showNotification("Please ensure your wallet is connected in Telegram");
-        throw error;
+        showNotification("Connection successful!");
+      } else {
+        showNotification("No wallet found. Create one in the bot first!");
       }
     } catch (error) {
-      console.error('Wallet connection failed:', error);
-      showNotification("Failed to connect wallet. Please try again.");
-    } finally {
-      setIsConnecting(false);
+      console.error('Connection test failed:', error);
+      showNotification("Connection test failed. Please try again.");
     }
+  };
+
+  // Add test button to WalletConnect component
+  const WalletConnectWithTest = () => (
+    <div className="wallet-connect-page">
+      <button 
+        onClick={testConnection}
+        className="connect-wallet-button"
+      >
+        Test Connection
+      </button>
+      <WalletConnect 
+        onConnect={connectWallet} 
+        onBack={handleBack}
+      />
+    </div>
+  );
+
+  // Update navigation
+  const handleNavigation = (path) => {
+    navigate(path);
+  };
+
+  const handleBack = () => {
+    handleNavigation('/');
+  };
+
+  // Add missing handler functions
+  const connectWallet = useCallback(async () => {
+    try {
+      if (telegramId) {
+        // Fetch wallet from bot's database
+        const response = await fetch(`${API_URL}/api/telegram-wallet/${telegramId}`);
+        const walletData = await response.json();
+        
+        if (walletData) {
+          setWallet({
+            account: walletData.address,
+            balance: walletData.balance,
+            type: 'telegram'
+          });
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Wallet connection error:', error);
+      showNotification("Failed to connect wallet");
+    }
+  }, [telegramId]);
+
+  const handleDisconnect = () => {
+    setWallet(null);
+    setUserProfile({
+      username: '',
+      bio: '',
+      profileImage: null
+    });
+    showNotification("Wallet disconnected successfully");
   };
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
-    document.documentElement.style.setProperty(
-      '--bg-color', 
-      !isDarkMode ? '#1f1f1f' : '#ffffff'
+    document.documentElement.setAttribute(
+      'data-theme',
+      !isDarkMode ? 'dark' : 'light'
     );
-    document.documentElement.style.setProperty(
-      '--text-color', 
-      !isDarkMode ? '#ffffff' : '#000000'
-    );
-    document.documentElement.setAttribute('data-theme', !isDarkMode ? 'dark' : 'light');
   };
 
-  // Update TokenCreator to use burn address
-  const handleTokenCreation = async (tokenData) => {
-    try {
-      // Create token transaction
-      const createTokenTx = {
-        TransactionType: "Payment",
-        Account: wallet.account,
-        Destination: BURN_ADDRESS,
-        Amount: "2000000", // 2 XRP in drops
-        Memos: [{
-          Memo: {
-            MemoType: Buffer.from("Token Creation", "utf8").toString("hex"),
-            MemoData: Buffer.from(JSON.stringify({
-              name: tokenData.name,
-              symbol: tokenData.ticker,
-              description: tokenData.description,
-              totalSupply: tokenData.totalSupply,
-              burnPercent: tokenData.burnAmount
-            }), "utf8").toString("hex")
-          }
-        }]
-      };
-
-      const prepared = await client.autofill(createTokenTx);
-      const signed = await client.sign(prepared);
-      const result = await client.submit(signed);
-
-      if (result.result.meta.TransactionResult === "tesSUCCESS") {
-        showNotification("Token created successfully!");
-        return true;
-      } else {
-        throw new Error("Transaction failed");
-      }
-    } catch (error) {
-      console.error('Token creation failed:', error);
-      showNotification("Failed to create token. Please try again.");
-      return false;
-    }
+  const handleTrade = (token) => {
+    showNotification(`Trading ${token.name} (${token.ticker})`);
+    // Implement actual trading logic here
   };
 
   const handleSortChange = (newSort) => {
@@ -1122,71 +1156,33 @@ const App = () => {
     setTokens(sortedTokens);
   };
 
-  useEffect(() => {
-    // Set initial theme
-    document.documentElement.style.setProperty('--bg-color', '#1f1f1f');
-    document.documentElement.style.setProperty('--text-color', '#ffffff');
-    document.documentElement.setAttribute('data-theme', 'dark');
-  }, []); // Empty dependency array means this runs once on mount
-
-  useEffect(() => {
-    const updateKingOfHill = async () => {
-      try {
-        // In a real implementation, this would fetch from your API
-        // For now, we'll simulate with the highest volume token
-        const highestVolumeToken = tokens.reduce((prev, current) => {
-          return (prev.volume > current.volume) ? prev : current;
-        }, { volume: 0 });
-
-        setKingToken({
-          name: highestVolumeToken.name || "Sample Token",
-          ticker: highestVolumeToken.ticker || "SMPL",
-          price: highestVolumeToken.price || 0.001,
-          volume: highestVolumeToken.volume || 1000000,
-          marketCap: highestVolumeToken.marketCap || 5000000,
-          priceChange: Math.random() * 20 - 10, // Simulate price change
-          image: highestVolumeToken.image
-        });
-      } catch (error) {
-        console.error('Failed to update King of the Hill:', error);
-      }
-    };
-
-    // Initial update
-    updateKingOfHill();
-
-    // Update every 5 minutes
-    const interval = setInterval(updateKingOfHill, 300000);
-
-    return () => clearInterval(interval);
-  }, [tokens]);
-
-  // Add trading handler
-  const handleTrade = (token) => {
-    showNotification(`Trading ${token.name} (${token.ticker})`);
-    // Implement actual trading logic here
-  };
-
-  const handleDisconnect = async () => {
+  const handleTokenCreation = async (tokenData) => {
     try {
-      // For Telegram wallet, we just clear the local state
-      setWallet(null);
-      setUserProfile({
-        username: '',
-        bio: '',
-        profileImage: null
-      });
-      showNotification("Wallet disconnected successfully");
+      if (!wallet) {
+        showNotification("Please connect a wallet first");
+        return false;
+      }
+
+      if (wallet.type === 'telegram') {
+        const response = await fetch(`${API_URL}/api/telegram-wallet/${telegramId}/create-token`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(tokenData)
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          showNotification("Token created successfully!");
+          return true;
+        }
+      }
+      return false;
     } catch (error) {
-      console.error('Failed to disconnect:', error);
-      showNotification("Failed to disconnect wallet properly");
-      // Still clear the states even if there's an error
-      setWallet(null);
-      setUserProfile({
-        username: '',
-        bio: '',
-        profileImage: null
-      });
+      console.error('Token creation failed:', error);
+      showNotification("Failed to create token. Please try again.");
+      return false;
     }
   };
 
@@ -1202,71 +1198,142 @@ const App = () => {
     showNotification("Profile updated successfully!");
   };
 
-  useEffect(() => {
-    // Make connectWallet available globally
-    window.connectWallet = connectWallet;
-    
-    return () => {
-      delete window.connectWallet;
-    };
-  }, [connectWallet]);
+  const MainContent = () => (
+    <>
+      <header>
+        <div className="header-content">
+          <div className="left-header">
+            <div className="title-social">
+              <h1>XRPump</h1>
+              <div className="social-icons">
+                <button 
+                  className="social-link"
+                  onClick={() => window.open('https://twitter.com/XRPump', '_blank')}
+                  aria-label="Twitter"
+                >
+                  <svg viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M23.643 4.937c-.835.37-1.732.62-2.675.733.962-.576 1.7-1.49 2.048-2.578-.9.534-1.897.922-2.958 1.13-.85-.904-2.06-1.47-3.4-1.47-2.572 0-4.658 2.086-4.658 4.66 0 .364.042.718.12 1.06-3.873-.195-7.304-2.05-9.602-4.868-.4.69-.63 1.49-.63 2.342 0 1.616.823 3.043 2.072 3.878-.764-.025-1.482-.234-2.11-.583v.06c0 2.257 1.605 4.14 3.737 4.568-.392.106-.803.162-1.227.162-.3 0-.593-.028-.877-.082.593 1.85 2.313 3.198 4.352 3.234-1.595 1.25-3.604 1.995-5.786 1.995-.376 0-.747-.022-1.112-.065 2.062 1.323 4.51 2.093 7.14 2.093 8.57 0 13.255-7.098 13.255-13.254 0-.2-.005-.402-.014-.602.91-.658 1.7-1.477 2.323-2.41z"/>
+                  </svg>
+                </button>
+                <button 
+                  className="social-link"
+                  onClick={() => window.open('https://t.me/XRPump', '_blank')}
+                  aria-label="Telegram"
+                >
+                  <svg viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                  </svg>
+                </button>
+                <button 
+                  className="social-link"
+                  onClick={() => window.open('https://discord.gg/XRPump', '_blank')}
+                  aria-label="Discord"
+                >
+                  <svg viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="right-header">
+            <ProfileDropdown 
+              wallet={wallet}
+              onDisconnect={handleDisconnect}
+              onEditProfile={() => setShowProfileEditor(true)}
+              onViewProfile={() => setShowProfileView(true)}
+              navigate={handleNavigation}
+              connectWallet={connectWallet}
+            />
+            <ThemeToggle isDark={isDarkMode} onToggle={toggleTheme} />
+          </div>
+        </div>
+      </header>
 
-  useEffect(() => {
-    // Initialize Telegram WebApp
-    WebApp.ready();
-    
-    // Enable closing confirmation if needed
-    WebApp.enableClosingConfirmation();
+      {kingToken && (
+        <KingOfTheHill 
+          token={kingToken}
+          onTrade={handleTrade}
+        />
+      )}
 
-    // Handle main button clicks
-    WebApp.MainButton.onClick(() => {
-      // Handle main button actions
-    });
+      <div className="token-section">
+        <h2>
+          <span className="spinning-token">🪙</span>
+          Token Directory
+          <span className="spinning-token">🪙</span>
+        </h2>
+        <button 
+          onClick={() => setShowTokenCreator(true)} 
+          className="create-token-button"
+        >
+          Create New Token
+        </button>
+        <TokenList 
+          tokens={tokens}
+          sortBy={sortBy}
+          onSortChange={handleSortChange}
+        />
+      </div>
 
-    return () => {
-      // Cleanup
-      WebApp.MainButton.offClick();
-    };
-  }, []);
+      {showTokenCreator && (
+        <TokenCreator 
+          onClose={() => setShowTokenCreator(false)}
+          wallet={wallet}
+          onSubmit={handleTokenCreation}
+        />
+      )}
+
+      {showProfileEditor && (
+        <ProfileEditor
+          wallet={{
+            ...wallet,
+            ...userProfile
+          }}
+          onSave={handleProfileSave}
+          onClose={() => setShowProfileEditor(false)}
+          onViewProfile={() => {
+            setShowProfileEditor(false);
+            setShowProfileView(true);
+          }}
+        />
+      )}
+
+      {showProfileView && (
+        <ProfileView
+          wallet={{
+            ...wallet,
+            ...userProfile,
+            tokensHeld: [],
+            tokensCreated: []
+          }}
+          onEditProfile={() => {
+            setShowProfileView(false);
+            setShowProfileEditor(true);
+          }}
+          onClose={() => setShowProfileView(false)}
+        />
+      )}
+    </>
+  );
 
   return (
     <div className="app">
-      {!wallet ? (
-        <ConnectWallet 
-          onConnect={connectWallet}
-          isConnecting={isConnecting}
-        />
-      ) : (
-        <>
-          <ProfileDropdown 
-            wallet={wallet}
-            onDisconnect={handleDisconnect}
-            onEditProfile={() => setShowProfileEditor(true)}
-            onViewProfile={() => setShowProfileView(true)}
-            onCreateToken={() => setShowTokenCreator(true)}
-          />
-          <div className="token-section">
-            <h2>
-              <span className="spinning-token">🪙</span>
-              Token Directory
-              <span className="spinning-token">🪙</span>
-            </h2>
-            <button 
-              onClick={() => setShowTokenCreator(true)} 
-              className="create-token-button"
-            >
-              Create New Token
-            </button>
-            <TokenList 
-              tokens={tokens}
-              sortBy={sortBy}
-              onSortChange={handleSortChange}
-            />
-          </div>
-        </>
-      )}
+      <Routes>
+        <Route path="/" element={<MainContent />} />
+        <Route path="/connect" element={<WalletConnectWithTest />} />
+      </Routes>
     </div>
   );
 };
 
-export default App; 
+// Wrap the App with Router
+const AppWrapper = () => {
+  return (
+    <Router>
+      <App />
+    </Router>
+  );
+};
+
+export default AppWrapper; 
