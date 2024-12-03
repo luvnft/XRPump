@@ -1198,6 +1198,40 @@ const App = () => {
     showNotification("Profile updated successfully!");
   };
 
+  // Initialize Telegram WebApp
+  useEffect(() => {
+    if (window.Telegram?.WebApp) {
+      const webApp = window.Telegram.WebApp;
+      
+      // Enable debugging
+      webApp.enableClosingConfirmation();
+      webApp.expand();
+      
+      // Get user data
+      const initData = webApp.initData;
+      const initDataUnsafe = webApp.initDataUnsafe;
+      
+      console.log('Telegram WebApp initialized:', {
+        initData,
+        initDataUnsafe,
+        colorScheme: webApp.colorScheme,
+        themeParams: webApp.themeParams
+      });
+
+      // Set theme based on Telegram theme
+      setIsDarkMode(webApp.colorScheme === 'dark');
+      
+      // Set user ID if available
+      if (initDataUnsafe?.user?.id) {
+        setTelegramId(initDataUnsafe.user.id);
+      }
+
+      webApp.ready();
+    } else {
+      console.error('Telegram WebApp not available');
+    }
+  }, []);
+
   const MainContent = () => (
     <>
       <header>
@@ -1327,11 +1361,34 @@ const App = () => {
   );
 };
 
-// Wrap the App with Router
+// Add error boundary component
+class ErrorBoundary extends React.Component {
+  state = { hasError: false, error: null };
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 20, color: 'red' }}>
+          <h2>Something went wrong</h2>
+          <pre>{this.state.error?.message}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// Wrap App with ErrorBoundary
 const AppWrapper = () => {
   return (
     <Router>
-      <App />
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
     </Router>
   );
 };

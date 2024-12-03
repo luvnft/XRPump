@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: xrpump-api
+    env: node
+    buildCommand: npm install
+    startCommand: node bot.js
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: MONGO_URI
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false 

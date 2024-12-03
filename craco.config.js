@@ -28,13 +28,15 @@ module.exports = {
         }
     },
     devServer: {
+        allowedHosts: [
+            'localhost',
+            '.ngrok-free.app',
+            '.ngrok.io'
+        ],
         setupMiddlewares: (middlewares, devServer) => {
             if (!devServer) {
                 throw new Error('webpack-dev-server is not defined');
             }
-
-            // Add your custom middleware here
-            
             return middlewares;
         }
     }

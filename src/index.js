@@ -1,11 +1,13 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
-import App from './App';
+import ReactDOM from 'react-dom/client';
 import './styles.css';
+import App from './App';
+import WebApp from '@twa-dev/sdk';
 
-const container = document.getElementById('root');
-const root = createRoot(container);
+// Initialize Telegram WebApp
+WebApp.ready();
 
+const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <App />

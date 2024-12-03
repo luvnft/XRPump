@@ -249,47 +249,45 @@ bot.onText(/\/recover (.+)/, async (msg, match) => {
 // Start command
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const webAppUrl = isDevelopment 
-    ? 'http://localhost:3000'
-    : 'https://firelordfontana.github.io/XRPump';
+  const webAppUrl = 'https://firelordfontana.github.io/XRPump';
 
-  // Log the URL being used
   console.log('Using WebApp URL:', webAppUrl);
 
-  const keyboard = {
-    inline_keyboard: [
-      [{
-        text: '👛 Create Wallet',
-        callback_data: 'create_wallet'
-      }],
-      [{
-        text: '💼 My Wallets',
-        callback_data: 'view_wallets'
-      }],
-      [{
-        text: '🔄 Recover Wallet',
-        callback_data: 'recover_wallet'
-      }],
-      [{
-        text: '❌ Delete Wallet',
-        callback_data: 'delete_wallet'
-      }]
-    ]
-  };
+  try {
+    await bot.sendMessage(chatId, 
+      "*Welcome to XRPump!*\n\n" +
+      "Click the button below to open the app:",
+      { parse_mode: 'Markdown' }
+    );
 
-  bot.sendMessage(chatId, 
-    "*Welcome to XRP Wallet Bot!*\n\n" +
-    "• Create or recover your XRP wallet\n" +
-    "• Manage multiple wallets\n" +
-    "• Send and receive XRP\n\n" +
-    "Choose an option below:",
-    { 
-      parse_mode: 'Markdown', 
-      reply_markup: keyboard,
-      web_app: { url: webAppUrl }
-    }
-  );
+    const keyboard = {
+      inline_keyboard: [
+        [{
+          text: '🌐 Open XRPump',
+          web_app: { url: webAppUrl }
+        }]
+      ]
+    };
+
+    await bot.sendMessage(chatId, 
+      "Choose an option:",
+      { reply_markup: keyboard }
+    );
+  } catch (error) {
+    console.error('Start command error:', error);
+    bot.sendMessage(chatId, 
+      "Sorry, there was an error. Please try again or contact support."
+    );
+  }
+});
+
+// Add error handler for the bot
+bot.on('polling_error', (error) => {
+  console.error('Bot polling error:', error);
+});
+
+bot.on('error', (error) => {
+  console.error('Bot error:', error);
 });
 
 // Handle callback queries
