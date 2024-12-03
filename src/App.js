@@ -1061,19 +1061,69 @@ const App = () => {
     }
   };
 
-  // Add test button to WalletConnect component
+  // Update WalletConnectWithTest component
   const WalletConnectWithTest = () => (
     <div className="wallet-connect-page">
-      <button 
-        onClick={testConnection}
-        className="connect-wallet-button"
-      >
-        Test Connection
-      </button>
-      <WalletConnect 
-        onConnect={connectWallet} 
-        onBack={handleBack}
-      />
+      <div className="wallet-options">
+        <button 
+          onClick={() => setShowProfileEditor(true)}
+          className="wallet-option-button"
+        >
+          Edit Profile
+        </button>
+        
+        <button 
+          onClick={() => setShowProfileView(true)}
+          className="wallet-option-button"
+        >
+          View Profile
+        </button>
+        
+        <button 
+          onClick={handleDisconnect}
+          className="wallet-option-button disconnect"
+        >
+          Disconnect
+        </button>
+        
+        <button 
+          onClick={handleBack}
+          className="back-to-app"
+        >
+          Back to App
+        </button>
+      </div>
+
+      {showProfileEditor && (
+        <ProfileEditor
+          wallet={{
+            ...wallet,
+            ...userProfile
+          }}
+          onSave={handleProfileSave}
+          onClose={() => setShowProfileEditor(false)}
+          onViewProfile={() => {
+            setShowProfileEditor(false);
+            setShowProfileView(true);
+          }}
+        />
+      )}
+
+      {showProfileView && (
+        <ProfileView
+          wallet={{
+            ...wallet,
+            ...userProfile,
+            tokensHeld: [],
+            tokensCreated: []
+          }}
+          onEditProfile={() => {
+            setShowProfileView(false);
+            setShowProfileEditor(true);
+          }}
+          onClose={() => setShowProfileView(false)}
+        />
+      )}
     </div>
   );
 

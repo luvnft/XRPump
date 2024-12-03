@@ -11,6 +11,28 @@ const port = 5000;
 // Add before bot initialization
 app.use(express.json());
 
+// Add a basic route for the root URL
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'XRPump API is running',
+    version: '1.0.0',
+    endpoints: [
+      '/api/telegram-wallet/:telegramId',
+      '/api/telegram-wallet/:telegramId/create-token'
+    ]
+  });
+});
+
+// Add health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Add your API endpoints
 app.get('/api/telegram-wallet/:telegramId', async (req, res) => {
   try {
