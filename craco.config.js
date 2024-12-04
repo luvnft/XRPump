@@ -31,6 +31,7 @@ module.exports = {
         allowedHosts: [
             'localhost',
             '.ngrok-free.app',
+            'xr-pump.vercel.app',
             '.ngrok.io'
         ],
         setupMiddlewares: (middlewares, devServer) => {

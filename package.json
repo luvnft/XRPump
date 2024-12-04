@@ -13,7 +13,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.0.1",
-    "react-scripts": "^3.0.1",
+    "react-scripts": "^5.0.1",
     "semver": "^7.3.5",
     "xrpl": "^4.0.0",
     "xumm-oauth2-pkce": "^2.8.7"
@@ -46,7 +46,7 @@
       "last 1 safari version"
     ]
   },
-  "homepage": "https://firelordfontana.github.io/XRPump",
+  "homepage": "https://xr-pump.vercel.app/",
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "browserify-zlib": "^0.2.0",

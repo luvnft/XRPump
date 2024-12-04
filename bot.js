@@ -271,7 +271,7 @@ bot.onText(/\/recover (.+)/, async (msg, match) => {
 // Start command
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
-  const webAppUrl = 'https://firelordfontana.github.io/XRPump';
+  const webAppUrl = 'https://xr-pump.vercel.app/';
 
   console.log('Using WebApp URL:', webAppUrl);
 
