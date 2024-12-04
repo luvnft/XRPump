@@ -32,6 +32,7 @@ module.exports = {
             'localhost',
             '.ngrok-free.app',
             'xr-pump.vercel.app',
+            'xrp.hahz.live',
             '.ngrok.io'
         ],
         setupMiddlewares: (middlewares, devServer) => {
